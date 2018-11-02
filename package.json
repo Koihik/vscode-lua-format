@@ -2,8 +2,9 @@
     "name": "vscode-lua-format",
     "displayName": "vscode-lua-format",
     "description": "Reformats your Lua source code.",
-    "version": "1.0.0",
+    "version": "1.0.3",
     "homepage": "https://github.com/Koihik/LuaFormatter",
+    "icon": "lua-logo.png",
     "repository": {
         "type": "git",
         "url": "https://github.com/Koihik/vscode-lua-format.git"
@@ -29,7 +30,18 @@
         "onLanguage:lua"
     ],
     "main": "./out/extension",
-    "contributes": {},
+    "configuration": {
+        "title": "vscode-lua-format configuration",
+        "properties": {
+            "vscode-lua-format.configPath": {
+                "type": [
+                    "string"
+                ],
+                "default": "",
+                "description": "Specifies the style config file."
+            }
+        }
+    },
     "scripts": {
         "vscode:prepublish": "npm run compile",
         "compile": "tsc -p ./",

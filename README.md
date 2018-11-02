@@ -10,4 +10,4 @@ Only Support MacOS/Linux now.
 
 ## Extension Settings
 
-* `vscode-lua-foramt.configFile`: Specify the style config file
+* `vscode-lua-foramt.configFile`: Specifies the style config file
