@@ -40,11 +40,11 @@ class LuaFormatProvider implements vscode.DocumentFormattingEditProvider {
 
             let platform = os.platform();
             var path = `${extensionPath}/bin/`;
-            if (platform == "linux" || platform == "darwin") {
+            if (platform == "linux" || platform == "darwin" || platform == "win32") {
                 path += platform;
             } else {
-                vscode.window.showErrorMessage(`vscode-lua-format do not support Windows.`);
-                reject(new Error(`vscode-lua-format do not support Windows.`));
+                vscode.window.showErrorMessage(`vscode-lua-format do not support '${platform}'.`);
+                reject(new Error(`vscode-lua-format do not support '${platform}'.`));
             }
             path += "/lua-format";
 
