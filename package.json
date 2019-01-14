@@ -2,7 +2,7 @@
     "name": "vscode-lua-format",
     "displayName": "vscode-lua-format",
     "description": "Reformats your Lua source code.",
-    "version": "1.0.5",
+    "version": "1.1.0",
     "homepage": "https://github.com/Koihik/LuaFormatter",
     "icon": "lua-logo.png",
     "repository": {
