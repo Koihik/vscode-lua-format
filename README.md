@@ -5,9 +5,6 @@ VS Code plugin for [LuaFormatter](https://github.com/Koihik/LuaFormatter).
 ## Features
 Reformats your Lua source code.
 
-## Requirements
-Only Support MacOS/Linux now.
-
 ## Extension Settings
 
-* `vscode-lua-foramt.configFile`: Specifies the style config file
+* `vscode-lua-foramt.configFile`: Specifies the style config file. [Style Options](https://github.com/Koihik/LuaFormatter/wiki/Style-Config)
