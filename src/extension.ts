@@ -30,6 +30,14 @@ class LuaFormatProvider implements vscode.DocumentFormattingEditProvider {
         return new Promise((resolve, reject) => {
 
             let configPath = vscode.workspace.getConfiguration().get<string>("vscode-lua-format.configPath");
+            
+            // if is workspace relative path, convert to absolute path
+            if (vscode.workspace.asRelativePath(configPath) == configPath) {
+                let workspaceFolders = vscode.workspace.workspaceFolders;
+                if (workspaceFolders != undefined && workspaceFolders.length > 0) {
+                    configPath = workspaceFolders[0].uri.fsPath + "/" + configPath;
+                }
+            }
 
             const args = ["-si"];
 
