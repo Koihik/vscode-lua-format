@@ -35,9 +35,7 @@
             "title": "vscode-lua-format configuration",
             "properties": {
                 "vscode-lua-format.configPath": {
-                    "type": [
-                        "string"
-                    ],
+                    "type": "string",
                     "default": "",
                     "description": "Specifies the style config file."
                 }
