@@ -38,6 +38,11 @@
                     "type": "string",
                     "default": "",
                     "description": "Specifies the style config file."
+                },
+                "vscode-lua-format.binaryPath": {
+                    "type": "string",
+                    "default": "",
+                    "description": "Specifies alternative lua-format binary path."
                 }
             }
         }
