@@ -37,9 +37,9 @@ function updateDiagnostics(document: vscode.TextDocument, errorMsg: string | voi
             });
         });
         diagnosticCollection.set(document.uri, errs);
-	} else {
-		diagnosticCollection.clear();
-	}
+    } else {
+        diagnosticCollection.clear();
+    }
 }
 
 class LuaFormatProvider implements vscode.DocumentFormattingEditProvider {
@@ -77,27 +77,30 @@ class LuaFormatProvider implements vscode.DocumentFormattingEditProvider {
             }
 
             const cmd = cp.spawn(path, args, {});
-            let result = "", errorMsg = "";
+            const result: Buffer[] = [], errorMsg: Buffer[] = [];
             cmd.on('error', err => {
                 console.warn(err);
                 vscode.window.showErrorMessage(`Run lua-format error : '${err.message}'`);
                 reject(err);
             });
             cmd.stdout.on('data', data => {
-                result += data.toString();
+                result.push(Buffer.from(data));
             });
             cmd.stderr.on('data', data => {
-                errorMsg += data.toString();
+                errorMsg.push(Buffer.from(data));
             });
             cmd.on('exit', code => {
-                updateDiagnostics(document,errorMsg);
-                if (errorMsg) { return; }
+                const resultStr = Buffer.concat(result).toString();
+                const errorMsgStr = Buffer.concat(errorMsg).toString();
+                updateDiagnostics(document,errorMsgStr);
                 if (code) {
                     vscode.window.showErrorMessage(`Run lua-format failed with exit code: ${code}`);
                     return reject(new Error(`Run lua-format failed with exit code: ${code}`));
                 }
-                const range = document.validateRange(new vscode.Range(0, 0, Infinity, Infinity));
-                resolve([new vscode.TextEdit(range, result)]);
+                if (resultStr.length > 0) {
+                    const range = document.validateRange(new vscode.Range(0, 0, Infinity, Infinity));
+                    resolve([new vscode.TextEdit(range, resultStr)]);
+                }
             });
             cmd.stdin.write(data);
             cmd.stdin.end();
