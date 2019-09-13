@@ -94,8 +94,8 @@ class LuaFormatProvider implements vscode.DocumentFormattingEditProvider {
                 const errorMsgStr = Buffer.concat(errorMsg).toString();
                 updateDiagnostics(document, errorMsgStr);
                 if (code) {
-                    vscode.window.showErrorMessage(`Run lua-format failed with exit code: ${code}`);
-                    return reject(new Error(`Run lua-format failed with exit code: ${code}`));
+                    vscode.window.showErrorMessage(`Run lua-format failed with exit code: ${code} ${errorMsgStr}`);
+                    return reject(new Error(`Run lua-format failed with exit code: ${code} ${errorMsgStr}`));
                 }
                 if (resultStr.length > 0) {
                     const range = document.validateRange(new vscode.Range(0, 0, Infinity, Infinity));
