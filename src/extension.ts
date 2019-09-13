@@ -2,6 +2,8 @@
 import * as vscode from 'vscode';
 import * as cp from 'child_process';
 import * as os from 'os';
+import * as path from 'path';
+import * as fs from 'fs';
 
 const selectors: { language: string; scheme: string }[] = [
     { language: 'lua', scheme: 'file' },
@@ -55,55 +57,72 @@ class LuaFormatProvider implements vscode.DocumentFormattingEditProvider {
             let configPath = vscode.workspace.getConfiguration().get<string>("vscode-lua-format.configPath");
             const binaryPath = vscode.workspace.getConfiguration().get<string>("vscode-lua-format.binaryPath");
 
-            const args = ["-si"];
-
-            if (configPath) {
-                args.push("-c");
-                args.push(configPath);
-            }
-
             if (binaryPath) {
-                path = binaryPath;
+                exepath = binaryPath;
             } else {
                 let platform = os.platform();
-                var path = `${extensionPath}/bin/`;
+                var exepath = `${extensionPath}/bin/`;
                 if (platform === "linux" || platform === "darwin" || platform === "win32") {
-                    path += platform;
+                    exepath += platform;
                 } else {
                     vscode.window.showErrorMessage(`vscode-lua-format do not support '${platform}'.`);
                     reject(new Error(`vscode-lua-format do not support '${platform}'.`));
                 }
-                path += "/lua-format";
+                exepath += "/lua-format";
             }
 
-            const cmd = cp.spawn(path, args, {});
-            const result: Buffer[] = [], errorMsg: Buffer[] = [];
-            cmd.on('error', err => {
-                console.warn(err);
-                vscode.window.showErrorMessage(`Run lua-format error : '${err.message}'`);
-                reject(err);
-            });
-            cmd.stdout.on('data', data => {
-                result.push(Buffer.from(data));
-            });
-            cmd.stderr.on('data', data => {
-                errorMsg.push(Buffer.from(data));
-            });
-            cmd.on('close', code => {
-                const resultStr = Buffer.concat(result).toString();
-                const errorMsgStr = Buffer.concat(errorMsg).toString();
-                updateDiagnostics(document, errorMsgStr);
-                if (code) {
-                    vscode.window.showErrorMessage(`Run lua-format failed with exit code: ${code} ${errorMsgStr}`);
-                    return reject(new Error(`Run lua-format failed with exit code: ${code} ${errorMsgStr}`));
+            const args = ["-si"];
+
+            function process() {
+                const cmd = cp.spawn(exepath, args, {});
+                const result: Buffer[] = [], errorMsg: Buffer[] = [];
+                cmd.on('error', err => {
+                    console.warn(err);
+                    vscode.window.showErrorMessage(`Run lua-format error : '${err.message}'`);
+                    reject(err);
+                });
+                cmd.stdout.on('data', data => {
+                    result.push(Buffer.from(data));
+                });
+                cmd.stderr.on('data', data => {
+                    errorMsg.push(Buffer.from(data));
+                });
+                cmd.on('close', code => {
+                    const resultStr = Buffer.concat(result).toString();
+                    const errorMsgStr = Buffer.concat(errorMsg).toString("utf8");
+                    updateDiagnostics(document, errorMsgStr);
+                    if (code) {
+                        vscode.window.showErrorMessage(`Run lua-format failed with exit code: ${code} ${errorMsgStr}`);
+                        return reject(new Error(`Run lua-format failed with exit code: ${code}`));
+                    }
+                    if (resultStr.length > 0) {
+                        const range = document.validateRange(new vscode.Range(0, 0, Infinity, Infinity));
+                        resolve([new vscode.TextEdit(range, resultStr)]);
+                    }
+                });
+                cmd.stdin.write(data);
+                cmd.stdin.end();
+            }
+
+            if (configPath) {
+                args.push("-c");
+                args.push(configPath);
+                process();
+            } else {
+                var rootpath = vscode.workspace.getWorkspaceFolder(document.uri);
+                if (rootpath) {
+                    let configPath = path.join(rootpath.uri.fsPath, ".lua-format")
+                    fs.exists(configPath, function (exists: boolean) {
+                        if (exists) {
+                            args.push("-c");
+                            args.push(configPath);
+                        }
+                        process();
+                    })
+                } else {
+                    process()
                 }
-                if (resultStr.length > 0) {
-                    const range = document.validateRange(new vscode.Range(0, 0, Infinity, Infinity));
-                    resolve([new vscode.TextEdit(range, resultStr)]);
-                }
-            });
-            cmd.stdin.write(data);
-            cmd.stdin.end();
+            }
         });
     }
 }
