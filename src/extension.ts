@@ -28,7 +28,7 @@ function updateDiagnostics(document: vscode.TextDocument, errorMsg: string | voi
             let pos: any[] | null = /^line (\d+):(\d+)/.exec(err);
             if (!pos || pos.length !== 3) { return; }
             // LuaFormatter: row start from 1, col start from 0
-            pos = [parseInt(pos[1])-1, parseInt(pos[2])];
+            pos = [parseInt(pos[1]) - 1, parseInt(pos[2])];
             const range = new vscode.Range(new vscode.Position(pos[0], pos[1]), new vscode.Position(pos[0], pos[1]));
             errs.push({
                 message: err,
@@ -89,10 +89,10 @@ class LuaFormatProvider implements vscode.DocumentFormattingEditProvider {
             cmd.stderr.on('data', data => {
                 errorMsg.push(Buffer.from(data));
             });
-            cmd.on('exit', code => {
+            cmd.on('close', code => {
                 const resultStr = Buffer.concat(result).toString();
                 const errorMsgStr = Buffer.concat(errorMsg).toString();
-                updateDiagnostics(document,errorMsgStr);
+                updateDiagnostics(document, errorMsgStr);
                 if (code) {
                     vscode.window.showErrorMessage(`Run lua-format failed with exit code: ${code}`);
                     return reject(new Error(`Run lua-format failed with exit code: ${code}`));
