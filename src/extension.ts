@@ -50,7 +50,7 @@ class LuaFormatProvider implements vscode.DocumentFormattingEditProvider {
     public provideDocumentFormattingEdits(document: vscode.TextDocument, options: vscode.FormattingOptions, token: vscode.CancellationToken): Thenable<vscode.TextEdit[]> {
         var data = document.getText();
 
-        return new Promise((resolve, reject) => {
+        return new Promise(async (resolve, reject) => {
 
             let configPath = vscode.workspace.getConfiguration().get<string>("vscode-lua-format.configPath");
             const binaryPath = vscode.workspace.getConfiguration().get<string>("vscode-lua-format.binaryPath");
@@ -58,8 +58,12 @@ class LuaFormatProvider implements vscode.DocumentFormattingEditProvider {
             const args = ["-si"];
 
             if (configPath) {
-                args.push("-c");
-                args.push(configPath);
+                let configPathSearch = await vscode.workspace.findFiles(configPath);
+                let lastPath = configPathSearch.pop();
+                if (lastPath) {
+                    args.push("-c");
+                    args.push(lastPath.path);
+                }
             }
 
             if (binaryPath) {
