@@ -2,19 +2,18 @@
 import * as vscode from 'vscode';
 import * as cp from 'child_process';
 import * as os from 'os';
+import * as path from 'path';
 
 const selectors: { language: string; scheme: string }[] = [
     { language: 'lua', scheme: 'file' },
     { language: 'lua', scheme: 'untitled' },
 ];
 
-let extensionPath = "";
 let diagnosticCollection: vscode.DiagnosticCollection;
 
 export function activate(context: vscode.ExtensionContext) {
-    extensionPath = context.extensionPath;
     diagnosticCollection = vscode.languages.createDiagnosticCollection('lua-format');
-    vscode.languages.registerDocumentFormattingEditProvider(selectors, new LuaFormatProvider());
+    vscode.languages.registerDocumentFormattingEditProvider(selectors, new LuaFormatProvider(context));
 }
 
 export function deactivate() {
@@ -28,7 +27,7 @@ function updateDiagnostics(document: vscode.TextDocument, errorMsg: string | voi
             let pos: any[] | null = /^line (\d+):(\d+)/.exec(err);
             if (!pos || pos.length !== 3) { return; }
             // LuaFormatter: row start from 1, col start from 0
-            pos = [parseInt(pos[1])-1, parseInt(pos[2])];
+            pos = [parseInt(pos[1]) - 1, parseInt(pos[2])];
             const range = new vscode.Range(new vscode.Position(pos[0], pos[1]), new vscode.Position(pos[0], pos[1]));
             errs.push({
                 message: err,
@@ -43,47 +42,44 @@ function updateDiagnostics(document: vscode.TextDocument, errorMsg: string | voi
 }
 
 class LuaFormatProvider implements vscode.DocumentFormattingEditProvider {
+    private context: vscode.ExtensionContext;
 
-    constructor() {
+    constructor(context: vscode.ExtensionContext) {
+        this.context = context;
     }
 
     public provideDocumentFormattingEdits(document: vscode.TextDocument, options: vscode.FormattingOptions, token: vscode.CancellationToken): Thenable<vscode.TextEdit[]> {
         var data = document.getText();
 
-        return new Promise(async (resolve, reject) => {
-
+        return new Promise((resolve, reject) => {
             let configPath = vscode.workspace.getConfiguration().get<string>("vscode-lua-format.configPath");
-            const binaryPath = vscode.workspace.getConfiguration().get<string>("vscode-lua-format.binaryPath");
+            let binaryPath = vscode.workspace.getConfiguration().get<string>("vscode-lua-format.binaryPath");
 
             const args = ["-si"];
 
             if (configPath) {
-                let configPathSearch = await vscode.workspace.findFiles(configPath);
-                let lastPath = configPathSearch.pop();
-                if (lastPath) {
-                    args.push("-c");
-                    args.push(lastPath.path);
+                if (!path.isAbsolute(configPath)) {
+                    configPath = this.context.asAbsolutePath(configPath);
                 }
+                args.push("-c");
+                args.push(configPath);
             }
 
-            if (binaryPath) {
-                path = binaryPath;
-            } else {
+            if (!binaryPath) {
                 let platform = os.platform();
-                var path = `${extensionPath}/bin/`;
+                binaryPath = `${this.context.extensionPath}/bin/`;
                 if (platform === "linux" || platform === "darwin" || platform === "win32") {
-                    path += platform;
+                    binaryPath += platform;
                 } else {
-                    vscode.window.showErrorMessage(`vscode-lua-format do not support '${platform}'.`);
                     reject(new Error(`vscode-lua-format do not support '${platform}'.`));
+                    return;
                 }
-                path += "/lua-format";
+                binaryPath += "/lua-format";
             }
 
-            const cmd = cp.spawn(path, args, {});
+            const cmd = cp.spawn(binaryPath, args, {});
             const result: Buffer[] = [], errorMsg: Buffer[] = [];
             cmd.on('error', err => {
-                console.warn(err);
                 vscode.window.showErrorMessage(`Run lua-format error : '${err.message}'`);
                 reject(err);
             });
@@ -96,10 +92,11 @@ class LuaFormatProvider implements vscode.DocumentFormattingEditProvider {
             cmd.on('exit', code => {
                 const resultStr = Buffer.concat(result).toString();
                 const errorMsgStr = Buffer.concat(errorMsg).toString();
-                updateDiagnostics(document,errorMsgStr);
+                updateDiagnostics(document, errorMsgStr);
                 if (code) {
                     vscode.window.showErrorMessage(`Run lua-format failed with exit code: ${code}`);
-                    return reject(new Error(`Run lua-format failed with exit code: ${code}`));
+                    reject(new Error(`Run lua-format failed with exit code: ${code}`));
+                    return;
                 }
                 if (resultStr.length > 0) {
                     const range = document.validateRange(new vscode.Range(0, 0, Infinity, Infinity));
