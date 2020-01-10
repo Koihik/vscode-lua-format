@@ -55,7 +55,7 @@ class LuaFormatProvider implements vscode.DocumentFormattingEditProvider {
             let configPath = vscode.workspace.getConfiguration().get<string>("vscode-lua-format.configPath");
             let binaryPath = vscode.workspace.getConfiguration().get<string>("vscode-lua-format.binaryPath");
 
-            const args = ["-si"];
+            const args = [];
 
             if (configPath) {
                 if (!path.isAbsolute(configPath) && vscode.workspace.rootPath) {
@@ -71,16 +71,15 @@ class LuaFormatProvider implements vscode.DocumentFormattingEditProvider {
                 if (platform === "linux" || platform === "darwin" || platform === "win32") {
                     binaryPath += platform;
                 } else {
-                    reject(new Error(`vscode-lua-format do not support '${platform}'.`));
+                    reject(`vscode-lua-format do not support '${platform}'.`);
                     return;
                 }
                 binaryPath += "/lua-format";
             }
-
             const cmd = cp.spawn(binaryPath, args, {});
             const result: Buffer[] = [], errorMsg: Buffer[] = [];
             cmd.on('error', err => {
-                vscode.window.showErrorMessage(`Run lua-format error : '${err.message}'`);
+                vscode.window.showErrorMessage(`Run lua-format error: '${err.message}'`);
                 reject(err);
             });
             cmd.stdout.on('data', data => {
@@ -94,13 +93,14 @@ class LuaFormatProvider implements vscode.DocumentFormattingEditProvider {
                 const errorMsgStr = Buffer.concat(errorMsg).toString();
                 updateDiagnostics(document, errorMsgStr);
                 if (code) {
-                    vscode.window.showErrorMessage(`Run lua-format failed with exit code: ${code}`);
-                    reject(new Error(`Run lua-format failed with exit code: ${code}`));
+                    reject();
                     return;
                 }
                 if (resultStr.length > 0) {
                     const range = document.validateRange(new vscode.Range(0, 0, Infinity, Infinity));
                     resolve([new vscode.TextEdit(range, resultStr)]);
+                } else {
+                    reject(`unexpected error: ${errorMsgStr}`);
                 }
             });
             cmd.stdin.write(data);
