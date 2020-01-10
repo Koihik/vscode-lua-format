@@ -58,9 +58,8 @@ class LuaFormatProvider implements vscode.DocumentFormattingEditProvider {
             const args = ["-si"];
 
             if (configPath) {
-                if (!path.isAbsolute(configPath)) {
+                if (!path.isAbsolute(configPath) && vscode.workspace.rootPath) {
                     configPath = path.resolve(vscode.workspace.rootPath, configPath);
-                    //configPath = this.context.asAbsolutePath(configPath);
                 }
                 args.push("-c");
                 args.push(configPath);
