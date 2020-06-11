@@ -75,6 +75,10 @@ class LuaFormatProvider implements vscode.DocumentFormattingEditProvider {
                     return;
                 }
                 binaryPath += "/lua-format";
+            } else {
+                if (!path.isAbsolute(binaryPath) && vscode.workspace.rootPath) {
+                    binaryPath = path.resolve(vscode.workspace.rootPath, binaryPath);
+                }
             }
             const cmd = cp.spawn(binaryPath, args, {});
             const result: Buffer[] = [], errorMsg: Buffer[] = [];
