@@ -16,9 +16,6 @@ export function activate(context: vscode.ExtensionContext) {
     vscode.languages.registerDocumentFormattingEditProvider(selectors, new LuaFormatProvider(context));
 }
 
-export function deactivate() {
-}
-
 // show info in problem panel
 function updateDiagnostics(document: vscode.TextDocument, errorMsg: string | void): void {
     if (errorMsg) {
@@ -49,7 +46,7 @@ class LuaFormatProvider implements vscode.DocumentFormattingEditProvider {
     }
 
     public provideDocumentFormattingEdits(document: vscode.TextDocument, options: vscode.FormattingOptions, token: vscode.CancellationToken): Thenable<vscode.TextEdit[]> {
-        var data = document.getText();
+        const data = document.getText();
 
         return new Promise((resolve, reject) => {
             let configPath = vscode.workspace.getConfiguration().get<string>("vscode-lua-format.configPath");
@@ -66,7 +63,7 @@ class LuaFormatProvider implements vscode.DocumentFormattingEditProvider {
             }
 
             if (!binaryPath) {
-                let platform = os.platform();
+                const platform = os.platform();
                 binaryPath = `${this.context.extensionPath}/bin/`;
                 if (platform === "linux" || platform === "darwin" || platform === "win32") {
                     binaryPath += platform;
