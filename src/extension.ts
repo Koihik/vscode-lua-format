@@ -3,6 +3,7 @@ import * as vscode from 'vscode';
 import * as cp from 'child_process';
 import * as os from 'os';
 import * as path from 'path';
+import * as fs from 'fs';
 
 const selectors: { language: string; scheme: string }[] = [
     { language: 'lua', scheme: 'file' },
@@ -45,6 +46,22 @@ class LuaFormatProvider implements vscode.DocumentFormattingEditProvider {
         this.context = context;
     }
 
+    protected resolvePath(fileName: string) {
+        if (path.isAbsolute(fileName)) {
+            if (fs.existsSync(fileName)) {
+                return fileName;
+            }
+        } else {
+            for (const workspaceFolder of vscode.workspace.workspaceFolders || []) {
+                const fullPath = path.resolve(workspaceFolder.uri.path, fileName);
+                if (fs.existsSync(fullPath)) {
+                    return fullPath;
+                }
+            }
+        }
+        throw new Error(`Cannot find file: '${fileName}'`);
+    }
+
     public provideDocumentFormattingEdits(document: vscode.TextDocument, options: vscode.FormattingOptions, token: vscode.CancellationToken): Thenable<vscode.TextEdit[]> {
         const data = document.getText();
 
@@ -55,11 +72,13 @@ class LuaFormatProvider implements vscode.DocumentFormattingEditProvider {
             const args = [];
 
             if (configPath) {
-                if (!path.isAbsolute(configPath) && vscode.workspace.workspaceFolders[0]) {
-                    configPath = path.resolve(vscode.workspace.workspaceFolders[0], configPath);
+                try {
+                    configPath = this.resolvePath(configPath);
+                    args.push("-c");
+                    args.push(configPath);
+                } catch (error) {
+                    vscode.window.showWarningMessage(`Cannot find config file '${configPath}', fallback to default config.`);
                 }
-                args.push("-c");
-                args.push(configPath);
             }
 
             if (!binaryPath) {
@@ -73,9 +92,7 @@ class LuaFormatProvider implements vscode.DocumentFormattingEditProvider {
                 }
                 binaryPath += "/lua-format";
             } else {
-                if (!path.isAbsolute(binaryPath) && vscode.workspace.workspaceFolders[0]) {
-                    binaryPath = path.resolve(vscode.workspace.workspaceFolders[0], binaryPath);
-                }
+                binaryPath = this.resolvePath(binaryPath);
             }
             const cmd = cp.spawn(binaryPath, args, {});
             const result: Buffer[] = [], errorMsg: Buffer[] = [];
