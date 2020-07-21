@@ -55,8 +55,8 @@ class LuaFormatProvider implements vscode.DocumentFormattingEditProvider {
             const args = [];
 
             if (configPath) {
-                if (!path.isAbsolute(configPath) && vscode.workspace.rootPath) {
-                    configPath = path.resolve(vscode.workspace.rootPath, configPath);
+                if (!path.isAbsolute(configPath) && vscode.workspace.workspaceFolders[0]) {
+                    configPath = path.resolve(vscode.workspace.workspaceFolders[0], configPath);
                 }
                 args.push("-c");
                 args.push(configPath);
@@ -73,8 +73,8 @@ class LuaFormatProvider implements vscode.DocumentFormattingEditProvider {
                 }
                 binaryPath += "/lua-format";
             } else {
-                if (!path.isAbsolute(binaryPath) && vscode.workspace.rootPath) {
-                    binaryPath = path.resolve(vscode.workspace.rootPath, binaryPath);
+                if (!path.isAbsolute(binaryPath) && vscode.workspace.workspaceFolders[0]) {
+                    binaryPath = path.resolve(vscode.workspace.workspaceFolders[0], binaryPath);
                 }
             }
             const cmd = cp.spawn(binaryPath, args, {});
