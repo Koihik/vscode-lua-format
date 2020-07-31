@@ -53,7 +53,7 @@ class LuaFormatProvider implements vscode.DocumentFormattingEditProvider {
             }
         } else {
             for (const workspaceFolder of vscode.workspace.workspaceFolders || []) {
-                const fullPath = path.resolve(workspaceFolder.uri.path, fileName);
+                const fullPath = path.resolve(workspaceFolder.uri.fsPath, fileName);
                 if (fs.existsSync(fullPath)) {
                     return fullPath;
                 }
