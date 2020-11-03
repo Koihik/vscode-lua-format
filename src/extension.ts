@@ -94,7 +94,13 @@ class LuaFormatProvider implements vscode.DocumentFormattingEditProvider {
             } else {
                 binaryPath = this.resolvePath(binaryPath);
             }
-            const cmd = cp.spawn(binaryPath, args, {});
+
+            let cwd = undefined;
+            if (document.uri.toString().startsWith('file://')) {
+                cwd = path.dirname(document.fileName);
+            }
+
+            const cmd = cp.spawn(binaryPath, args, { cwd });
             const result: Buffer[] = [], errorMsg: Buffer[] = [];
             cmd.on('error', err => {
                 vscode.window.showErrorMessage(`Run lua-format error: '${err.message}'`);
