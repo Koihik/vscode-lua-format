@@ -9,3 +9,7 @@ Reformats your Lua source code.
 
 * `vscode-lua-format.configPath`: Specifies the style config file. [Style Options](https://github.com/Koihik/LuaFormatter/blob/master/docs/Style-Config.md)
 * `vscode-lua-format.binaryPath`: Specifies alternative lua-format binary path
+
+## External formatter
+
+Online [Lua Formatter](https://goonlinetools.com/lua-beautifier/) 
